@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Medicine Reminder</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #1f2a37;
+      --muted: #5b6b7a;
+      --accent: #1b9aaa;
+      --accent-2: #0d7d8a;
+      --danger: #d64545;
+      --border: #dde5ee;
+      --ok: #2e8b57;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top right, #d7edf0 0%, var(--bg) 45%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 900px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(21, 41, 61, 0.08);
+      padding: 24px;
+    }
+
+    h1 {
+      margin-bottom: 6px;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.2fr auto auto;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    input, select, button {
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      font-size: 0.95rem;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(27, 154, 170, 0.15);
+    }
+
+    button {
+      align-self: end;
+      background: var(--accent);
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    button:hover {
+      background: var(--accent-2);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar button {
+      background: #eaf5f7;
+      color: #0c5d66;
+      border: 1px solid #c6e7eb;
+      padding: 8px 12px;
+    }
+
+    .toolbar button:hover {
+      background: #d8edf1;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .empty {
+      color: var(--muted);
+      text-align: center;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .item {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr 0.8fr auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: #fcfeff;
+    }
+
+    .name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .next {
+      font-size: 0.9rem;
+      color: var(--ok);
+      font-weight: 600;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .delete {
+      background: #fdeaea;
+      color: var(--danger);
+      border: 1px solid #f7cccc;
+    }
+
+    .delete:hover {
+      background: #fbdcdc;
+    }
+
+    .edit {
+      background: #e8f3ff;
+      color: #195e9b;
+      border: 1px solid #cce3fb;
+    }
+
+    .edit:hover {
+      background: #dcebfb;
+    }
+
+    .cancel {
+      background: #f2f4f7;
+      color: #445364;
+      border: 1px solid #d9e0e8;
+    }
+
+    .cancel:hover {
+      background: #e7ecf2;
+    }
+
+    .stop-alarm {
+      background: #ffe9e9 !important;
+      color: #b42323 !important;
+      border: 1px solid #f5c3c3 !important;
+    }
+
+    .status {
+      font-size: 0.9rem;
+      color: #275675;
+      margin-bottom: 10px;
+      min-height: 20px;
+    }
+
+    .small {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    @media (max-width: 760px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .item {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Medicine Reminder</h1>
+    <p class="subtitle">Add your medicines and get reminders at the selected times.</p>
+
+    <form id="reminderForm" class="grid">
+      <div class="field">
+        <label for="medicineName">Medicine Name</label>
+        <input id="medicineName" type="text" placeholder="e.g., Paracetamol" required />
+      </div>
+
+      <div class="field">
+        <label for="dosage">Dosage</label>
+        <input id="dosage" type="text" placeholder="e.g., 1 tablet" required />
+      </div>
+
+      <div class="field">
+        <label for="times">Times (24-hour, comma separated)</label>
+        <input id="times" type="text" placeholder="08:00, 14:00, 20:00" required />
+      </div>
+
+      <button id="submitBtn" type="submit">Add Reminder</button>
+      <button id="cancelEdit" class="cancel" type="button" style="display: none;">Cancel Edit</button>
+    </form>
+
+    <div class="toolbar">
+      <button id="enableNotify" type="button">Enable Browser Notifications</button>
+      <button id="enableAlarm" type="button">Enable Alarm Sound</button>
+      <button id="stopAlarm" class="stop-alarm" type="button">Stop Alarm</button>
+      <button id="clearAll" type="button">Clear All</button>
+    </div>
+
+    <div id="status" class="status"></div>
+    <div id="list" class="list"></div>
+    <p class="small">Note: Reminders work while your browser is running (tab can be in background). If browser is fully closed, alarms cannot run.</p>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "medicine-reminders-v1";
+    let reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    let alertedMap = {};
+    let editingId = null;
+    let audioContext = null;
+    let alarmIntervalId = null;
+    let currentAlarmText = "";
+
+    const form = document.getElementById("reminderForm");
+    const list = document.getElementById("list");
+    const enableNotifyBtn = document.getElementById("enableNotify");
+    const enableAlarmBtn = document.getElementById("enableAlarm");
+    const stopAlarmBtn = document.getElementById("stopAlarm");
+    const clearAllBtn = document.getElementById("clearAll");
+    const submitBtn = document.getElementById("submitBtn");
+    const cancelEditBtn = document.getElementById("cancelEdit");
+    const medicineNameInput = document.getElementById("medicineName");
+    const dosageInput = document.getElementById("dosage");
+    const timesInput = document.getElementById("times");
+    const statusEl = document.getElementById("status");
+
+    const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
+    const setStatus = (text) => { statusEl.textContent = text; };
+
+    function ensureAudioContext() {
+      if (!audioContext) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return false;
+        audioContext = new AudioCtx();
+      }
+      return true;
+    }
+
+    async function unlockAlarmSound() {
+      if (!ensureAudioContext()) {
+        setStatus("Audio is not supported in this browser.");
+        return;
+      }
+      if (audioContext.state === "suspended") {
+        await audioContext.resume();
+      }
+      setStatus("Alarm sound enabled.");
+    }
+
+    function playBeep() {
+      if (!audioContext || audioContext.state !== "running") return;
+
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, audioContext.currentTime);
+      gain.gain.setValueAtTime(0.001, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.25, audioContext.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.35);
+
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+
+      osc.start();
+      osc.stop(audioContext.currentTime + 0.4);
+    }
+
+    function startAlarm(message) {
+      currentAlarmText = message;
+      setStatus(`ALARM: ${message}`);
+      if (!audioContext || audioContext.state !== "running") return;
+      if (alarmIntervalId) return;
+      playBeep();
+      alarmIntervalId = setInterval(playBeep, 1200);
+    }
+
+    function stopAlarm() {
+      if (alarmIntervalId) {
+        clearInterval(alarmIntervalId);
+        alarmIntervalId = null;
+      }
+      if (currentAlarmText) {
+        setStatus(`Stopped: ${currentAlarmText}`);
+        currentAlarmText = "";
+      }
+    }
+
+    function parseTimes(raw) {
+      const validTime = /^([01]\d|2[0-3]):([0-5]\d)$/;
+      return [...new Set(raw
+        .split(",")
+        .map((t) => t.trim())
+        .filter((t) => validTime.test(t))
+      )].sort();
+    }
+
+    function normalizeReminders() {
+      reminders = reminders
+        .map((r) => {
+          const times = Array.isArray(r.times) ? r.times : (r.time ? [r.time] : []);
+          const normalizedTimes = parseTimes(times.join(","));
+          if (!r.name || !r.dosage || normalizedTimes.length === 0) return null;
+          return {
+            id: r.id || Date.now().toString(),
+            name: r.name,
+            dosage: r.dosage,
+            times: normalizedTimes,
+          };
+        })
+        .filter(Boolean);
+      save();
+    }
+
+    function toTimeLabel(t) {
+      const [h, m] = t.split(":").map(Number);
+      const d = new Date();
+      d.setHours(h, m, 0, 0);
+      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function nextDoseText(times) {
+      const now = new Date();
+      const targets = times.map((time) => {
+        const [h, m] = time.split(":").map(Number);
+        const target = new Date();
+        target.setHours(h, m, 0, 0);
+        if (target < now) target.setDate(target.getDate() + 1);
+        return { time, target };
+      });
+      targets.sort((a, b) => a.target - b.target);
+      const next = targets[0];
+
+      const diffMs = next.target - now;
+      const hrs = Math.floor(diffMs / (1000 * 60 * 60));
+      const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+      if (hrs === 0) return `${toTimeLabel(next.time)} (in ${mins} min)`;
+      return `${toTimeLabel(next.time)} (in ${hrs}h ${mins}m)`;
+    }
+
+    function setEditMode(reminder) {
+      editingId = reminder.id;
+      medicineNameInput.value = reminder.name;
+      dosageInput.value = reminder.dosage;
+      timesInput.value = reminder.times.join(", ");
+      submitBtn.textContent = "Update Reminder";
+      cancelEditBtn.style.display = "block";
+    }
+
+    function clearEditMode() {
+      editingId = null;
+      submitBtn.textContent = "Add Reminder";
+      cancelEditBtn.style.display = "none";
+      form.reset();
+    }
+
+    function render() {
+      if (!reminders.length) {
+        list.innerHTML = '<div class="empty">No reminders yet. Add your first medicine above.</div>';
+        return;
+      }
+
+      list.innerHTML = reminders
+        .map(
+          (r) => `
+            <div class="item">
+              <div>
+                <div class="name">${r.name}</div>
+                <div class="meta">${r.dosage}</div>
+              </div>
+              <div class="meta">${r.times.map(toTimeLabel).join(", ")}</div>
+              <div class="next">Next dose ${nextDoseText(r.times)}</div>
+              <div class="actions">
+                <button class="edit" type="button" data-action="edit" data-id="${r.id}">Edit</button>
+                <button class="delete" type="button" data-action="delete" data-id="${r.id}">Delete</button>
+              </div>
+            </div>
+          `
+        )
+        .join("");
+    }
+
+    function triggerReminder(reminder, time) {
+      const msg = `${reminder.name} - ${reminder.dosage} at ${toTimeLabel(time)}`;
+
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("Medicine Reminder", { body: msg });
+      }
+
+      startAlarm(msg);
+    }
+
+    function checkReminders() {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mm = String(now.getMinutes()).padStart(2, "0");
+      const keyNow = `${hh}:${mm}`;
+      const today = now.toDateString();
+
+      reminders.forEach((r) => {
+        r.times.forEach((time) => {
+          const mapKey = `${r.id}-${today}-${time}`;
+          if (time === keyNow && !alertedMap[mapKey]) {
+            alertedMap[mapKey] = true;
+            triggerReminder(r, time);
+          }
+        });
+      });
+
+      render();
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const name = medicineNameInput.value.trim();
+      const dosage = dosageInput.value.trim();
+      const times = parseTimes(timesInput.value);
+
+      if (!name || !dosage || times.length === 0) {
+        alert("Enter at least one valid time in HH:MM format (example: 08:00, 20:30).");
+        return;
+      }
+
+      if (editingId) {
+        reminders = reminders.map((r) => r.id === editingId ? { ...r, name, dosage, times } : r);
+      } else {
+        reminders.push({
+          id: Date.now().toString(),
+          name,
+          dosage,
+          times,
+        });
+      }
+
+      save();
+      render();
+      clearEditMode();
+    });
+
+    list.addEventListener("click", (e) => {
+      const action = e.target.getAttribute("data-action");
+      if (!action) return;
+
+      const id = e.target.getAttribute("data-id");
+      const reminder = reminders.find((r) => r.id === id);
+      if (!reminder) return;
+
+      if (action === "edit") {
+        setEditMode(reminder);
+        return;
+      }
+
+      if (action === "delete") {
+        reminders = reminders.filter((r) => r.id !== id);
+        if (editingId === id) clearEditMode();
+        save();
+        render();
+      }
+    });
+
+    enableNotifyBtn.addEventListener("click", async () => {
+      if (!("Notification" in window)) {
+        setStatus("This browser does not support notifications.");
+        return;
+      }
+
+      const result = await Notification.requestPermission();
+      if (result === "granted") {
+        setStatus("Notifications enabled.");
+      } else {
+        setStatus("Notification permission denied.");
+      }
+    });
+
+    enableAlarmBtn.addEventListener("click", async () => {
+      try {
+        await unlockAlarmSound();
+      } catch (err) {
+        setStatus("Could not enable alarm sound. Try clicking again.");
+      }
+    });
+
+    stopAlarmBtn.addEventListener("click", () => {
+      stopAlarm();
+    });
+
+    clearAllBtn.addEventListener("click", () => {
+      if (!confirm("Delete all reminders?")) return;
+      reminders = [];
+      alertedMap = {};
+      save();
+      render();
+      clearEditMode();
+      stopAlarm();
+    });
+
+    cancelEditBtn.addEventListener("click", () => {
+      clearEditMode();
+    });
+
+    normalizeReminders();
+    setStatus("Tip: Click 'Enable Alarm Sound' once, then keep browser running for background reminders.");
+    render();
+    checkReminders();
+    setInterval(checkReminders, 1000 * 30);
+  </script>
+</body>
+</html>
